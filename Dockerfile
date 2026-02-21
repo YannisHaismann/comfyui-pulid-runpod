@@ -12,7 +12,7 @@
 # ==============================================================================
 
 # Use the official RunPod ComfyUI base image with FLUX.1-dev
-FROM runpod/worker-comfyui:3.6.0-flux1-dev
+FROM runpod/worker-comfyui:5.7.1-flux1-dev
 
 # Install PuLID-Flux custom nodes
 # Using lldacing's version which has no model pollution issues
