@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PuLID-Flux custom nodes
-# Use the virtual environment that ComfyUI uses
 WORKDIR /comfyui/custom_nodes
 RUN git clone https://github.com/lldacing/ComfyUI_PuLID_Flux_ll.git
 
@@ -22,7 +21,7 @@ RUN /opt/venv/bin/pip install -r requirements.txt
 
 # Create model directories
 RUN mkdir -p /comfyui/models/pulid \
-    /comfyui/models/insightface/models/antelopev2 \
+    /comfyui/models/insightface/models \
     /comfyui/models/clip \
     /comfyui/models/eva_clip
 
@@ -31,19 +30,41 @@ RUN curl -L "https://huggingface.co/guozinan/PuLID/resolve/main/pulid_flux_v0.9.
     -o /comfyui/models/pulid/pulid_flux_v0.9.1.safetensors
 
 # Download InsightFace models (antelopev2)
+# The zip contains an 'antelopev2' folder, so extract to parent directory
 RUN curl -L "https://huggingface.co/MonsterMMORPG/tools/resolve/main/antelopev2.zip" \
     -o /tmp/antelopev2.zip && \
-    unzip /tmp/antelopev2.zip -d /comfyui/models/insightface/models/antelopev2/ && \
-    rm /tmp/antelopev2.zip
+    unzip /tmp/antelopev2.zip -d /comfyui/models/insightface/models/ && \
+    rm /tmp/antelopev2.zip && \
+    ls -la /comfyui/models/insightface/models/ && \
+    ls -la /comfyui/models/insightface/models/antelopev2/
 
-# Download EVA CLIP model - try multiple possible locations
+# Download EVA CLIP model
 RUN curl -L "https://huggingface.co/QuanSun/EVA-CLIP/resolve/main/EVA02_CLIP_L_336_psz14_s6B.pt" \
-    -o /comfyui/models/eva_clip/EVA02_CLIP_L_336_psz14_s6B.pt && \
-    cp /comfyui/models/eva_clip/EVA02_CLIP_L_336_psz14_s6B.pt /comfyui/models/clip/
+    -o /comfyui/models/clip/EVA02_CLIP_L_336_psz14_s6B.pt && \
+    cp /comfyui/models/clip/EVA02_CLIP_L_336_psz14_s6B.pt /comfyui/models/eva_clip/
 
-# Verify installation - list custom nodes
-RUN ls -la /comfyui/custom_nodes/ && \
+# Verify custom nodes installation
+RUN echo "=== Custom nodes ===" && \
+    ls -la /comfyui/custom_nodes/ && \
+    echo "=== PuLID files ===" && \
     ls -la /comfyui/custom_nodes/ComfyUI_PuLID_Flux_ll/
+
+# Test Python imports to catch errors at build time
+RUN cd /comfyui && \
+    /opt/venv/bin/python -c "\
+import sys; \
+sys.path.insert(0, '/comfyui'); \
+sys.path.insert(0, '/comfyui/custom_nodes/ComfyUI_PuLID_Flux_ll'); \
+print('Testing imports...'); \
+from pulidflux import NODE_CLASS_MAPPINGS; \
+print('SUCCESS: Loaded', len(NODE_CLASS_MAPPINGS), 'nodes:', list(NODE_CLASS_MAPPINGS.keys())); \
+"
+
+# Verify all models are present
+RUN echo "=== Model verification ===" && \
+    ls -la /comfyui/models/pulid/ && \
+    ls -la /comfyui/models/clip/ && \
+    ls -la /comfyui/models/insightface/models/antelopev2/
 
 # Set environment
 ENV INSIGHTFACE_PROVIDER=CUDA
