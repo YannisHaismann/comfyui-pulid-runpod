@@ -2,7 +2,7 @@
 # Custom ComfyUI Worker with PuLID-Flux
 #
 # Based on the official RunPod ComfyUI worker with:
-# - FLUX.1-dev-fp8 model
+# - FLUX.1-dev model
 # - ComfyUI_PuLID_Flux_ll custom nodes
 # - InsightFace for face detection
 # - EVA CLIP for encoding
@@ -13,6 +13,12 @@
 
 # Use the official RunPod ComfyUI base image with FLUX.1-dev
 FROM runpod/worker-comfyui:5.7.1-flux1-dev
+
+# Install required system tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install PuLID-Flux custom nodes
 # Using lldacing's version which has no model pollution issues
