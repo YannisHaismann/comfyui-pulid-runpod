@@ -19,9 +19,10 @@ RUN git clone https://github.com/lldacing/ComfyUI_PuLID_Flux_ll.git
 WORKDIR /comfyui/custom_nodes/ComfyUI_PuLID_Flux_ll
 RUN /opt/venv/bin/pip install -r requirements.txt
 
-# Patch: Create a dummy download_file function since insightface removed it
-# We don't need it anyway because we download models manually
-RUN echo 'def download_file(*args, **kwargs): pass' >> /opt/venv/lib/python3.12/site-packages/insightface/utils/download.py
+# Patch insightface: newer versions removed some utils that PuLID needs
+# Create dummy modules/functions since we download models manually anyway
+RUN echo 'def download_file(*args, **kwargs): pass' >> /opt/venv/lib/python3.12/site-packages/insightface/utils/download.py && \
+    echo 'def download(*args, **kwargs): pass\ndef download_onnx(*args, **kwargs): pass' > /opt/venv/lib/python3.12/site-packages/insightface/utils/storage.py
 
 # Create model directories
 RUN mkdir -p /comfyui/models/pulid \
