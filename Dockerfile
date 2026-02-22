@@ -15,14 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /comfyui/custom_nodes
 RUN git clone https://github.com/lldacing/ComfyUI_PuLID_Flux_ll.git
 
-# Install Python dependencies in the correct venv
+# Install Python dependencies with FIXED insightface version (0.7.3 is compatible with PuLID)
 WORKDIR /comfyui/custom_nodes/ComfyUI_PuLID_Flux_ll
-RUN /opt/venv/bin/pip install -r requirements.txt
-
-# Patch insightface: newer versions removed some utils that PuLID needs
-# Create dummy modules/functions since we download models manually anyway
-RUN echo 'def download_file(*args, **kwargs): pass' >> /opt/venv/lib/python3.12/site-packages/insightface/utils/download.py && \
-    echo 'def download(*args, **kwargs): pass\ndef download_onnx(*args, **kwargs): pass' > /opt/venv/lib/python3.12/site-packages/insightface/utils/storage.py
+RUN /opt/venv/bin/pip install insightface==0.7.3 && \
+    /opt/venv/bin/pip install -r requirements.txt --no-deps && \
+    /opt/venv/bin/pip install cython facexlib onnxruntime onnxruntime-gpu ftfy timm
 
 # Create model directories
 RUN mkdir -p /comfyui/models/pulid \
